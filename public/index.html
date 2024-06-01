@@ -2,21 +2,27 @@
 <html>
 
 <head>
-    <title>Subir Archivo</title>
+    <title>Modificar Archivo de Configuración</title>
 </head>
 
 <body>
-    <h1>Subir Archivo</h1>
-    <form action="/files" method="post" enctype="multipart/form-data">
+    <h1>Modificar Archivo de Configuración</h1>
+    <form id="configForm" action="/files" method="post" enctype="multipart/form-data">
         <input type="file" name="file">
         <input type="submit" value="Subir">
     </form>
 
-    <button id="downloadButton" style="display: none;">Descargar Archivo</button>
+    <div id="editor" style="display: none;">
+        <h2>Editar Archivo de Configuración</h2>
+        <textarea id="fileContent" rows="10" cols="50"></textarea><br>
+        <button id="saveButton">Guardar Cambios</button>
+        <button id="downloadButton" style="display: none;">Descargar Archivo</button>
+    </div>
 
     <script>
-        // Función para mostrar el botón de descarga después de que se haya subido el archivo
-        document.querySelector('form').addEventListener('submit', function (event) {
+        let currentFilename = '';
+
+        document.querySelector('#configForm').addEventListener('submit', function (event) {
             event.preventDefault(); // Prevenir el envío del formulario
             var fileInput = document.querySelector('input[type="file"]');
             var file = fileInput.files[0];
@@ -27,23 +33,54 @@
             fetch('/files', {
                 method: 'POST',
                 body: formData
-            }).then(response => {
-                if (response.ok) {
-                    // Mostrar el botón de descarga después de que el archivo se haya subido correctamente
-                    document.getElementById('downloadButton').style.display = 'inline';
-                }
+            }).then(response => response.json())
+            .then(data => {
+                // Ocultar el formulario de subida y mostrar el editor de archivo
+                document.getElementById('configForm').style.display = 'none';
+                document.getElementById('editor').style.display = 'block';
+
+                // Llenar el área de texto con el contenido del archivo
+                document.getElementById('fileContent').value = data.content;
+                
+                // Guardar el nombre del archivo subido
+                currentFilename = data.filename;
             }).catch(error => {
                 console.error('Error uploading file:', error);
+                alert('Error al subir el archivo');
+            });
+        });
+
+        // Función para guardar los cambios en el archivo
+        document.getElementById('saveButton').addEventListener('click', function () {
+            var modifiedContent = document.getElementById('fileContent').value;
+
+            fetch('/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    filename: currentFilename,
+                    content: modifiedContent
+                })
+            }).then(response => {
+                if (response.ok) {
+                    alert('Archivo guardado exitosamente');
+                    // Mostrar el botón de descarga después de guardar los cambios
+                    document.getElementById('downloadButton').style.display = 'inline';
+                } else {
+                    alert('Error al guardar el archivo');
+                }
+            }).catch(error => {
+                console.error('Error saving file:', error);
+                alert('Error al guardar el archivo');
             });
         });
 
         // Función para descargar el archivo cuando se haga clic en el botón de descarga
         document.getElementById('downloadButton').addEventListener('click', function () {
-            // Obtener el nombre del archivo subido
-            var filename = document.querySelector('input[type="file"]').files[0].name;
-
             // Redireccionar a la ruta de descarga del archivo
-            window.location.href = '/download/' + filename;
+            window.location.href = '/download/' + currentFilename;
         });
     </script>
 </body>
