@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Subir Archivo</title>
+</head>
+
+<body>
+    <h1>Subir Archivo</h1>
+    <form action="/files" method="post" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <input type="submit" value="Subir">
+    </form>
+
+    <button id="downloadButton" style="display: none;">Descargar Archivo</button>
+
+    <script>
+        // Función para mostrar el botón de descarga después de que se haya subido el archivo
+        document.querySelector('form').addEventListener('submit', function (event) {
+            event.preventDefault(); // Prevenir el envío del formulario
+            var fileInput = document.querySelector('input[type="file"]');
+            var file = fileInput.files[0];
+            var formData = new FormData();
+            formData.append('file', file);
+
+            // Enviar la solicitud POST para subir el archivo
+            fetch('/files', {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    // Mostrar el botón de descarga después de que el archivo se haya subido correctamente
+                    document.getElementById('downloadButton').style.display = 'inline';
+                }
+            }).catch(error => {
+                console.error('Error uploading file:', error);
+            });
+        });
+
+        // Función para descargar el archivo cuando se haga clic en el botón de descarga
+        document.getElementById('downloadButton').addEventListener('click', function () {
+            // Obtener el nombre del archivo subido
+            var filename = document.querySelector('input[type="file"]').files[0].name;
+
+            // Redireccionar a la ruta de descarga del archivo
+            window.location.href = '/download/' + filename;
+        });
+    </script>
+</body>
+
+</html>
